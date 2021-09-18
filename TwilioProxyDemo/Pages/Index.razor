@@ -1,0 +1,121 @@
+﻿@page "/"
+
+@using TwilioProxyDemo.Models
+@using TwilioProxyDemo.Services
+@using Microsoft.Extensions.Logging
+
+@inject ILogger<SendSMSModel> Logger
+@inject SmsService smsService
+@inject SmsAlertService smsAlertService
+
+<div class="d-flex justify-content-center">
+    <div class="p-1" style="min-width: 300px; max-width: 400px;">
+        
+        <div class="py-1">
+            <Alert Color="@alertColor" Visible="@(alertMessage != null)" Dismisable="true">
+                <AlertMessage>@alertMessage</AlertMessage>
+                <AlertDescription>@alertDescription</AlertDescription>
+                <CloseButton Clicked="@(() => { alertMessage = null; })" />
+            </Alert>
+        </div>
+        
+        <h3 class="pt-3 pb-3">Twilio SMS Demo</h3>
+        
+        <EditForm EditContext="editContext" OnSubmit="@OnSubmit">
+            <DataAnnotationsValidator />
+            <div class="d-flex flex-row py-1">
+                <div style="min-width: 180px;">
+                    
+                    <Blazorise.Components.SelectList TItem="CountrySelectModel"
+                                                     TValue="string"
+                                                     Data="@countryCodeData"
+                                                     TextField="@((i) => i.Text)"
+                                                     ValueField="@((i) => i.Value)"
+                                                     SelectedValue="@smsModel.CountryCode"
+                                                     SelectedValueChanged="CountrySelected"
+                                                     Disabled="@isSending"
+                                                     DefaultItemText="Choose a country" />
+                    <div class="px-2 py-1">
+                        <ValidationMessage For="() => smsModel.CountryCode" />
+                    </div>
+                </div>
+                <div class="pl-1 pr-0 w-100">
+                    <TextEdit MaskType="MaskType.RegEx"
+                              EditMask="^[0-9]*$"
+                              Placeholder="Enter number"
+                              @bind-Text="smsModel.ToPhoneNumber"
+                              Disabled="@isSending"
+                              Attributes="@(new Dictionary<string, object> { { "autocomplete", "off" } })" />
+                    <div class="px-2 py-1">
+                        <ValidationMessage For="() => smsModel.ToPhoneNumber" />
+                    </div>
+                </div>
+            </div>
+            <div class="py-1">
+                <Button Color="Color.Primary"
+                        Type="@ButtonType.Submit"
+                        Disabled="@(isSending)"
+                        Loading="@(isSending)"
+                        class="w-100">
+                    @if (isSending)
+                    {
+                        <text>&nbsp;&nbsp;Sending...</text>
+                    }
+                    else
+                    {
+                        <text>Send</text>
+                    }
+                </Button>
+            </div>
+        </EditForm>
+        <hr />
+    </div>
+</div>
+
+@code {
+    private SendSMSModel smsModel = new();
+    private EditContext editContext;
+    private bool isSending = false;
+    IEnumerable<CountrySelectModel> countryCodeData;
+    private string alertMessage;
+    private string alertDescription;
+    private Blazorise.Color alertColor;
+
+    protected override void OnInitialized()
+    {
+        countryCodeData = smsService.GetCountriesSelectList();
+        editContext = new(smsModel);
+        smsAlertService.OnShowAlert += OnShowAlert; //Register an event listener for displaying alerts
+    }
+
+    private void CountrySelected(string newValue)
+    {
+        smsModel.CountryCode = newValue;
+    }
+
+    private async void OnSubmit()
+    {
+        var formValid = editContext.Validate();
+        if (formValid)
+        {
+            isSending = true;
+            await smsService.SendSMS(smsModel.ToPhoneNumber, smsModel.CountryCode);
+            isSending = false;
+            smsModel.CountryCode = "Choose a country";
+            smsModel.ToPhoneNumber = null;
+            StateHasChanged();
+        }
+    }
+
+    private async void OnShowAlert(SmsAlertArgs args)
+    {
+        await InvokeAsync(() =>
+        {
+            alertMessage = args.Message;
+            alertDescription = args.Description;
+            alertColor = args.Color;
+            StateHasChanged();
+        });
+    }
+}
+
