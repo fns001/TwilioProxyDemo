@@ -12,9 +12,21 @@ namespace TwilioProxyDemo.Services
     /// 2. The index page registers an event listener called OnShowAlert
     /// 3. API controllers and other services call CreateAlertByStatus or ShowAlert to invoke the OnShowAlert event.
     /// </summary>
-    public class SmsAlertService
+    public class ProxyAlertService
     {
-        public event Action<SmsAlertArgs> OnShowAlert;
+        public Dictionary<string, string> Participants = new Dictionary<string, string>();
+
+        public event Action<ProxyAlertArgs> OnShowAlert;
+
+        public void CreateProxyAlert(string message)
+        {
+            OnShowAlert.Invoke(new ProxyAlertArgs
+            {
+                Message = message,
+                Description = "test",
+                Color = Blazorise.Color.Info
+            });
+        }
 
         public void CreateAlertByStatus(string MessageStatus)
         {
@@ -34,7 +46,7 @@ namespace TwilioProxyDemo.Services
 
         public void ShowAlert(string message, string description, Blazorise.Color color)
         {
-            OnShowAlert.Invoke(new SmsAlertArgs
+            OnShowAlert.Invoke(new ProxyAlertArgs
             {
                 Message = message,
                 Description = description,

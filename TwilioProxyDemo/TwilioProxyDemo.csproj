@@ -2,17 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <UserSecretsId>b20d99e4-8fb7-484d-869e-3d13c84bba2d</UserSecretsId>
+    <UserSecretsId>cd8498cd-7584-489b-b816-7d425ad6605c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazorise.Bootstrap" Version="0.9.4.3" />
-    <PackageReference Include="Blazorise.Components" Version="0.9.4.3" />
-    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="0.9.4.3" />
-    <PackageReference Include="Blazorise.Snackbar" Version="0.9.4.3" />
-    <PackageReference Include="libphonenumber-csharp" Version="8.12.30" />
+    <PackageReference Include="Blazorise.Bootstrap" Version="0.9.4.4" />
+    <PackageReference Include="Blazorise.Components" Version="0.9.4.4" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="0.9.4.4" />
+    <PackageReference Include="Blazorise.Snackbar" Version="0.9.4.4" />
+    <PackageReference Include="libphonenumber-csharp" Version="8.12.32" />
     <PackageReference Include="Serilog.AspNetCore" Version="4.1.0" />
-    <PackageReference Include="Twilio" Version="5.65.0" />
+    <PackageReference Include="Twilio" Version="5.65.2" />
   </ItemGroup>
 
 </Project>

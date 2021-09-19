@@ -4,13 +4,13 @@
 @using TwilioProxyDemo.Services
 @using Microsoft.Extensions.Logging
 
-@inject ILogger<SendSMSModel> Logger
-@inject SmsService smsService
-@inject SmsAlertService smsAlertService
+@inject ILogger<ProxyModel> logger
+@inject ProxyService proxyService
+@inject ProxyAlertService proxyAlertService
 
 <div class="d-flex justify-content-center">
-    <div class="p-1" style="min-width: 300px; max-width: 400px;">
-        
+    <div class="p-1" style="min-width: 400px; max-width: 700px;">
+
         <div class="py-1">
             <Alert Color="@alertColor" Visible="@(alertMessage != null)" Dismisable="true">
                 <AlertMessage>@alertMessage</AlertMessage>
@@ -18,104 +18,142 @@
                 <CloseButton Clicked="@(() => { alertMessage = null; })" />
             </Alert>
         </div>
-        
-        <h3 class="pt-3 pb-3">Twilio SMS Demo</h3>
-        
+
+        <h3 class="pt-3 pb-3">Twilio Proxy Session Demo</h3>
+
         <EditForm EditContext="editContext" OnSubmit="@OnSubmit">
             <DataAnnotationsValidator />
-            <div class="d-flex flex-row py-1">
-                <div style="min-width: 180px;">
-                    
-                    <Blazorise.Components.SelectList TItem="CountrySelectModel"
-                                                     TValue="string"
-                                                     Data="@countryCodeData"
-                                                     TextField="@((i) => i.Text)"
-                                                     ValueField="@((i) => i.Value)"
-                                                     SelectedValue="@smsModel.CountryCode"
-                                                     SelectedValueChanged="CountrySelected"
-                                                     Disabled="@isSending"
-                                                     DefaultItemText="Choose a country" />
-                    <div class="px-2 py-1">
-                        <ValidationMessage For="() => smsModel.CountryCode" />
-                    </div>
+            <div class="d-flex flex-row py-2" style="color: gray">
+                <div class="pl-2 small" style="min-width: 100px;">
+
                 </div>
-                <div class="pl-1 pr-0 w-100">
-                    <TextEdit MaskType="MaskType.RegEx"
-                              EditMask="^[0-9]*$"
-                              Placeholder="Enter number"
-                              @bind-Text="smsModel.ToPhoneNumber"
-                              Disabled="@isSending"
-                              Attributes="@(new Dictionary<string, object> { { "autocomplete", "off" } })" />
-                    <div class="px-2 py-1">
-                        <ValidationMessage For="() => smsModel.ToPhoneNumber" />
-                    </div>
+                <div class="pl-2 w-50 small">
+                    Name
+                </div>
+                <div class="pl-2 w-50 small">
+                    Number
+                </div>
+            </div>
+            <div class="d-flex flex-row">
+                <div class="py-1 pr-4" style="min-width: 100px;">
+                    Driver
+                </div>
+                <div class="pr-1">
+                    <TextEdit ReadOnly="true" Text=@proxyModel.DriverName></TextEdit>
+                </div>
+                <div class="">
+                    <TextEdit ReadOnly="true" Text=@proxyModel.DriverNumber Role="TextRole.Password"></TextEdit>
+                </div>
+            </div>
+            <div class="d-flex flex-row">
+                <div class="py-3 pr-4" style="min-width: 100px;">
+                    Passenger
+                </div>
+                <div class="py-2 pr-1">
+                    <TextEdit ReadOnly="true" Text=@proxyModel.PassengerName></TextEdit>
+                </div>
+                <div class="py-2">
+                    <TextEdit ReadOnly="true" Text=@proxyModel.PassengerNumber Role="TextRole.Password"></TextEdit>
                 </div>
             </div>
             <div class="py-1">
-                <Button Color="Color.Primary"
-                        Type="@ButtonType.Submit"
-                        Disabled="@(isSending)"
-                        Loading="@(isSending)"
-                        class="w-100">
-                    @if (isSending)
-                    {
-                        <text>&nbsp;&nbsp;Sending...</text>
-                    }
-                    else
-                    {
-                        <text>Send</text>
-                    }
-                </Button>
+                @if (sessionStatus == "open" || sessionStatus == "in-progress")
+                {
+                    <Button Color="Color.Danger" class="w-100"
+                            Clicked="CloseSessionClicked">
+                        Close Session
+                    </Button>
+                }
+                else if (sessionStatus == "closed")
+                {
+                    <Button Color="Color.Primary" class="w-100"
+                            Clicked="OpenSessionClicked">
+                        Open Session
+                    </Button>
+                }
+                else
+                {
+                    <Button Color="Color.Primary"
+                            Type="@ButtonType.Submit"
+                            Disabled="@(isCreating)"
+                            Loading="@(false)"
+                            class="w-100">
+                        @if (isCreating)
+                        {
+                            <text>&nbsp;&nbsp;Creating Session...</text> }
+                        else
+                        {
+                            <text>Create Session</text>}
+                    </Button>
+                }
             </div>
         </EditForm>
         <hr />
+        @if (sessionStatus?.Length > 0)
+        {
+            <MemoEdit Rows="10" Background="Blazorise.Background.Light" ReadOnly="true" Text=@sessionText Style="font-family: monospace; font-size: 11pt; font-weight: normal;" />
+        }
     </div>
 </div>
 
 @code {
-    private SendSMSModel smsModel = new();
+    private ProxyModel proxyModel = new();
     private EditContext editContext;
-    private bool isSending = false;
+    private bool isCreating = false;
     IEnumerable<CountrySelectModel> countryCodeData;
     private string alertMessage;
     private string alertDescription;
     private Blazorise.Color alertColor;
+    private string sessionText { get; set; }
+    private string sessionStatus { get; set; }
 
     protected override void OnInitialized()
     {
-        countryCodeData = smsService.GetCountriesSelectList();
-        editContext = new(smsModel);
-        smsAlertService.OnShowAlert += OnShowAlert; //Register an event listener for displaying alerts
+        editContext = new(proxyModel);
+        proxyAlertService.OnShowAlert += OnShowAlert; //Register an event listener for displaying alerts
+
+        proxyModel.DriverName = "Alice";
+        proxyModel.DriverNumber = "+***********";
+        proxyModel.PassengerName = "Bob";
+        proxyModel.PassengerNumber = "+***********";
+
+        sessionStatus = proxyService.GetSession();
     }
 
-    private void CountrySelected(string newValue)
+    private void CloseSessionClicked()
     {
-        smsModel.CountryCode = newValue;
+        sessionStatus = proxyService.OpenSession(open: false);
+        AppendSessionText("Session " + sessionStatus);
     }
 
-    private async void OnSubmit()
+    private void OpenSessionClicked()
     {
-        var formValid = editContext.Validate();
-        if (formValid)
-        {
-            isSending = true;
-            await smsService.SendSMS(smsModel.ToPhoneNumber, smsModel.CountryCode);
-            isSending = false;
-            smsModel.CountryCode = "Choose a country";
-            smsModel.ToPhoneNumber = null;
-            StateHasChanged();
-        }
+        sessionStatus = proxyService.OpenSession(open: true);
+        AppendSessionText("Session " + sessionStatus?.Replace("-"," "));
     }
 
-    private async void OnShowAlert(SmsAlertArgs args)
+    private async Task OnSubmit()
+    {
+        isCreating = true;
+        sessionStatus = await proxyService.CreateSessionAsync();
+        isCreating = false;
+        AppendSessionText("New proxy session created");
+    }
+
+    private async void OnShowAlert(ProxyAlertArgs args)
     {
         await InvokeAsync(() =>
         {
-            alertMessage = args.Message;
-            alertDescription = args.Description;
-            alertColor = args.Color;
+            AppendSessionText(args.Message);
             StateHasChanged();
         });
+    }
+
+    private string DateText => "[" + DateTime.Now.ToString("HH:mm:ss") + "] ";
+
+    private void AppendSessionText(string text)
+    {
+        sessionText += DateText + text + "\r\n";
     }
 }
 

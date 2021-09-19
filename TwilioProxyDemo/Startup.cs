@@ -33,8 +33,8 @@ namespace TwilioProxyDemo
             
             services.AddBlazorise(o => { o.ChangeTextOnKeyPress = true; }).AddBootstrapProviders().AddFontAwesomeIcons();
 
-            services.AddSingleton<SmsAlertService>();
-            services.AddTransient<SmsService>();
+            services.AddSingleton<ProxyAlertService>();
+            services.AddTransient<ProxyService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

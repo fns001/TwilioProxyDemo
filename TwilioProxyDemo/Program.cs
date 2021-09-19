@@ -52,7 +52,7 @@ namespace TwilioProxyDemo
             .WriteTo.Debug(outputTemplate: outputTemplateFile)
 #else
             //The line below is intended for Azure hosting. Uncomment to write to a log file.
-            //.WriteTo.File(@"D:\home\LogFiles\smsdemolog_.txt", fileSizeLimitBytes: 10000000, rollingInterval: RollingInterval.Month, rollOnFileSizeLimit: true, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(logFileInterval), outputTemplate: outputTemplateFile)
+            .WriteTo.File(@"D:\home\LogFiles\proxydemolog_.txt", fileSizeLimitBytes: 10000000, rollingInterval: RollingInterval.Month, rollOnFileSizeLimit: true, shared: true, flushToDiskInterval: TimeSpan.FromSeconds(logFileInterval), outputTemplate: outputTemplateFile)
 #endif
             .Filter.ByExcluding(Matching.FromSource("Microsoft.AspNetCore"))
             .CreateLogger();

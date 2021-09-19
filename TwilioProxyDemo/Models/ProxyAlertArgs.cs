@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace TwilioProxyDemo.Models
 {
-    public class SmsAlertArgs
+    public class ProxyAlertArgs
     {
         public string Message { get; set; }
         public string Description { get; set; }
